@@ -1,0 +1,122 @@
+{
+    "A": {
+        "start": 837,
+        "end_": 1926,
+        "end": 1923,
+        "skips": [1186, 1579, 1804],
+        "accession_straussman": "P35579",
+        "accession": "P35579"
+    },
+
+    "B": {
+        "start": 844,
+        "end_": 1932,
+        "end": 1929,
+        "skips": [1193, 1586, 1811],
+        "accession_straussman": "A59252",
+        "accession": "P35580"
+    },
+
+    "C": {
+        "start": 865,
+        "end_": 1945,
+        "end": 1942,
+        "skips": [1210, 1603, 1828],
+        "accession_straussman": "NP_079005",
+        "accession": "NP_079005"
+    },
+
+    "M": {
+        "start": 840,
+        "end_": 1933,
+        "end": 1929,
+        "skips": [1189, 1386, 1583, 1808],
+        "accession_straussman": "S04090",
+        "accession": "P11055"
+    },
+
+    "M18A": {
+        "start": 1246,
+        "end_": 1971,
+        "end": 1971,
+        "skips": [],
+        "accession": "Q92614"
+    },
+
+    "S": {
+        "start": 844,
+        "end_": 1937,
+        "end": 1934,
+        "skips": [1193, 1586, 1811],
+        "accession_straussman": "NP_002465",
+        "accession": "NP_002465"
+    },
+
+    "A3xA": {
+        "start": 837,
+        "end_": 1926,
+        "end": 1923,
+        "skips": [1186, 1579, 1804],
+        "description": "amino acid substitutions S1915A, S1916A and S1943A, preventing heavy chain phosphorylation by PKC and CK II"
+    },
+
+    "AACD": {
+        "start": 837,
+        "end_": 1706,
+        "end": 1704,
+        "skips": [1186, 1579],
+        "description": "Deletion of the complete assembly competent domain by removing the amino acids 1692 – 1961"
+    },
+
+    "AIQ2": {
+        "start": 837,
+        "end_": 1926,
+        "end": 1923,
+        "skips": [1186, 1579, 1804],
+        "description": "coding segment for amino acids 804-834 (corresponding to the IQ2 motif that binds RLC) was deleted"
+    },
+    
+    "Atailpiece": {
+        "start": 837,
+        "end_": 1926,
+        "end": 1923,
+        "skips": [1186, 1579, 1804],
+        "description": "eliminating the last 33 amino acids corresponding to the non-helical tailpiece"
+    },
+    
+    "Awskips": {
+        "start": 837,
+        "end_": 1926,
+        "end": 1926,
+        "skips": [],
+        "accession_straussman": "P35579",
+        "accession": "P35579"
+        },
+    
+    "Bwskips": {
+        "start": 844,
+        "end_": 1932,
+        "end": 1932,
+        "skips": [],
+        "accession_straussman": "A59252",
+        "accession": "P35579"
+        },
+
+    "Boneskip": {
+        "start": 844,
+        "end_": 1932,
+        "end": 1932,
+        "skips": [1811],
+        "accession_straussman": "A59252",
+        "accession": "P35579"
+        },
+    
+    "Cwskips": {
+        "start": 865,
+        "end_": 1945,
+        "end": 1945,
+        "skips": [],
+        "accession_straussman": "NP_079005",
+        "accession": "NP_079005"
+        }
+}

@@ -5,6 +5,7 @@ Correspondence should be addressed to Prof. Ulrich S. Schwarz at schwarz@thphys.
 
 
 ## Folder structure
+The project requires the folder structure as shown below
 ```
 ├── data
 │   ├── charges
@@ -16,11 +17,13 @@ Correspondence should be addressed to Prof. Ulrich S. Schwarz at schwarz@thphys.
 ├── scripts
 ```
 
+This structure can be created using the command `mkdir -p data/{paircoil,charges} results/{potentials,T1}` on *nix machines.
+
 
 ## Workflow
 The workflow is run using the workflow manager [Snakemake](https://snakemake.readthedocs.io/en/stable/).
 
-## Scripts
+### Scripts
 All scripts are in the folder `scripts` and use functions from the file `utils.py`.
 
 ### Data
