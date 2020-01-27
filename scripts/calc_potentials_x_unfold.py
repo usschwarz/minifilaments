@@ -4,10 +4,9 @@ Written by Tom Kaufmann (Institute for Theoretical Physics and BioQuant, Heidelb
 Correspondence should be addressed to Prof. Ulrich S. Schwarz at schwarz@thphys.uni-heidelberg.de.
 '''
 
-from utils import get_optimum_bending, calc_pairwise_potential
 import argparse
 import numpy as np
-from datetime import datetime
+from utils import get_optimum_bending, calc_straight_potential
 
 if __name__ == "__main__":
 
@@ -22,7 +21,7 @@ if __name__ == "__main__":
     if antiparallel:
         anti_str = 'anti_'
 
-    # Open charges
+    # Load charges
     with open(args['charges1'], 'rb') as f:
         charges1 = np.load(f)
     iso1 = args['charges1'].split('_')[0].split('/')[2]
@@ -32,20 +31,20 @@ if __name__ == "__main__":
 
     potentials = np.zeros((1000, 200))
 
-    for i in range(1000//5): # unbind
-        # Add the normal (i.e. straight-line) potential
-        normal_potential = calc_pairwise_potential(charges1,
-                                charges2[:i*5],
-                                antiparallel=antiparallel)
+    # check for L_o from 0 to 1000 amino acids in steps of 5
+    for L_o in range(1000//5):
+        # Straight rods potential
+        normal_potential = calc_straight_potential(charges1,
+                                                charges2[:L_o*5],
+                                                antiparallel=antiparallel)
 
         normal_potential = normal_potential[(len(normal_potential)//2):(len(normal_potential)//2 + 1000)]
         # has to be this way because some mutants are smaller than 1000aas
-        potentials[:len(normal_potential), i] = normal_potential
+        potentials[:len(normal_potential), L_o] = normal_potential
 
-        for x in range(0, 1000, 1): # x-stagger
-            potentials[x, i] += get_optimum_bending(charges1, charges2, x, i*5, antiparallel=antiparallel)[2]
+        # Now the potential of the bent part
+        for stagger in range(0, 1000, 1):
+            potentials[stagger, L_o] += get_optimum_bending(charges1, charges2, stagger, L_o*5, antiparallel=antiparallel)[2]
 
-    np.save("results/potentials/potentials_" + anti_str + "x_unfold_{}_{}.npy".format(iso1, iso2), 
+    np.save("results/potentials/potentials_" + anti_str + "s_unfold_{}_{}.npy".format(iso1, iso2), 
         potentials)
-
-    print('Done with potential: {}{}_{} at {}'.format(anti_str, iso1, iso2, str(datetime.now()).split(' ')[0]))

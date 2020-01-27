@@ -14,21 +14,22 @@ if __name__ == "__main__":
     args = vars(ap.parse_args())
 
     with open(args['input'], 'r') as f:
-        pc = f.readlines()
+        paircoil_raw = f.readlines()
 
     start = 3
-    if pc[start].split()[0] != '1':
+    if paircoil_raw[start].split()[0] != '1':
         start = 4
 
-    pc_ = []
-    for p in pc[start:]:
-        pc_.append(p.split())
-    pc = np.array(pc_)
+    paircoil = []
+    for line in paircoil_raw[start:]:
+        paircoil.append(line.split())
+    paircoil = np.array(paircoil)
 
-    register = pc[:, 2]
-    p_vals = pc[:, 3].astype(float)
+    register = paircoil[:, 2]
+    p_vals = paircoil[:, 3].astype(float)
 
     register[np.where(p_vals > 0.05)[0]] = '.'
 
     with open(args['output'], 'w') as f:
         f.write(''.join(register))
+        

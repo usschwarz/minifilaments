@@ -26,7 +26,6 @@ rule calc_T1:
 
     output:
         "results/T1/T1{anti}x_unfold_{iso1}_{iso2}.npy",
-        "results/T1/T1{anti}x_unfold_{iso1}_{iso2}.png"
     run:
         if wildcards.anti == '_anti_':
             shell("python {input.script} --potentials {input.potentials} --charges1 {input.charges1} --antiparallel")
@@ -58,7 +57,7 @@ rule calc_charges:
     output:
         "data/charges/{iso}_charges.npy"
     shell:
-        "python {input.script} --seq {input.seq} --seq_raw {input.seq} --paircoil {input.paircoil}"
+        "python {input.script} --seq {input.seq} --paircoil {input.paircoil}"
 
 rule clean_paircoil:
     input:

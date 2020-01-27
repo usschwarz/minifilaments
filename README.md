@@ -23,6 +23,8 @@ This structure can be created using the command `mkdir -p data/{paircoil,charges
 ## Workflow
 The workflow is run using the workflow manager [Snakemake](https://snakemake.readthedocs.io/en/stable/).
 
+The workflow uses the standard modules `argparse`, `json` and `numpy` as well as [Numba](https://numba.pydata.org/) for JIT compilation of the code.
+
 ### Scripts
 All scripts are in the folder `scripts` and use functions from the file `utils.py`.
 

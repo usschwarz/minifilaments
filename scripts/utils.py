@@ -2,59 +2,41 @@
 Written by Tom Kaufmann (Institute for Theoretical Physics and BioQuant, Heidelberg University, Heidelberg, Germany) 2019.
 
 Correspondence should be addressed to Prof. Ulrich S. Schwarz at schwarz@thphys.uni-heidelberg.de.
+
+All functions use the length unit of 1aa = 0.1456nm which corresponds to the 
+distance between two neighboring amino acids in the regular coiled-coil.
+The energy scale used is k_B T.
+
+`k` always represents the inverse Debye-Hueckel length k = 1/1.3nm.
+`y` represents the lateral distance between the two rods (y = 14aa = 2nm).
 '''
 
 import numpy as np
-from matplotlib import pyplot as plt
 from numba import jit
 
 
-@jit(nopython=True)
-def calc_pairwise_potential_OLD(charges_1, charges_2, x, y,
-                                antiparallel=False, k=0.11):
-    '''
-    DEPRICATED (is a lot slower and unaccurate than new version)
-    Loop along charges_2
-    '''
-
-    potential = 0
-    # Only take 2*1/k charges into account
-    window = int(2/k)
-    if antiparallel:
-        charges_1 = charges_1[::-1]
-
-    for j in range(len(charges_2)):
-        for i in range(max(0, j+x-window), min(len(charges_1), j+x+window+1)):
-            if charges_1[i] and charges_2[j]:
-                r = np.sqrt((i-(x+j))**2 + y**2)
-                potential += charges_1[i] * charges_2[j] * np.exp(-r * k)/r
-
-    # Tune to the correct scale
-    potential *= 4.75
-
-    return potential
-
-
-def calc_pairwise_potential(charges_1,
+def calc_straight_potential(charges_1,
                             charges_2,
                             y=14,
-                            kernel=None,
                             antiparallel=False,
                             k=0.11):
     '''
-    charges_2 is always the shorter one!
+    Calculate the electrostatic potential of two straight rods.
+    This is done using convolutions (immense speed-up over 2 for-loops)
+
+    `charges_2` is the rod shifted by stagger s
     '''
 
-    if not kernel:
-        r = np.abs(np.arange(-200, 200))
-        r = np.sqrt(r**2 + (y)**2)
-        kernel = np.exp(-k * r) / r
+    r = np.abs(np.arange(-200, 200))
+    r = np.sqrt(r**2 + y**2)
+    kernel = np.exp(-k * r) / r
 
-    if not antiparallel:  # It's correct this way!
+    if not antiparallel:
         charges_1 = charges_1[::-1]
 
     pot = np.convolve(np.pad(charges_1, pad_width=100, mode='constant', constant_values=0),
-                      kernel, mode='full')
+                      kernel, 
+                      mode='full')
 
     result = np.convolve(np.pad(charges_2, pad_width=100, mode='constant', constant_values=0),
                          np.pad(pot, pad_width=100,
@@ -62,156 +44,62 @@ def calc_pairwise_potential(charges_1,
                          mode='full')
 
     pad_width = np.abs(len(charges_1) - len(charges_2))
+    result = np.pad(result, 
+                    pad_width=pad_width,
+                    mode='constant', 
+                    constant_values=0)
 
-    result = np.pad(result, pad_width=pad_width,
-                    mode='constant', constant_values=0)
     midpoint = 3*100 + len(kernel)//2 + 2 * pad_width + len(charges_2)
+    # Value 4.75 to transform to units of [k_B T]
     result = 4.75 * result[(midpoint-len(charges_1)):(midpoint+len(charges_1))]
 
-    result = result[::-1]
-
-    return result
+    return result[::-1]
 
 
-def plot_two_myosin(ch,
-                    x,
-                    unzip,
-                    radius,
-                    extend_bend=-1,
-                    show_charges_color=False,
-                    x_zoom=None,
-                    antiparallel=False,
-                    fig=None,
-                    ax=None):
-    if not ax or not fig:
-        fig, ax = plt.subplots(figsize=(15, 5))
+def calc_bending_energy(L, R, lp=890, return_in_kBT=True):
+    '''
+    Calculate the bending energy according to the worm-like-chain model for
+    polymers with locally straight conformation. The energy is 
+    $$
+    E_{\text{bend}} = \frac{l_p L}{2 R^2} k_B T
+    $$
+    '''
 
-    if show_charges_color:
-        color_dict = {0: 'grey', 1: 'blue', -1: 'red'}
-        colors = [[color_dict[c] for c in ch], [color_dict[c] for c in ch]]
-
-    else:
-        colors = [len(ch)*['green'], len(ch)*['purple']]
-
-    x = int(x)
-    unzip = int(unzip)
-    radius = int(radius)
-    extend_bend = int(extend_bend)
-
-    circ_4 = int(np.pi * radius / 2)
-    rest_chain = np.min([circ_4, len(ch)-unzip])
-
-    if antiparallel:
-        ax.set_ylim(-25, 1 + radius *
-                    (1 - np.cos(np.pi/2 * (len(ch) - unzip) / circ_4)) + 25)
-        ax.set_xlim(-1 * len(ch) + x, len(ch)+25)
-    else:
-        ax.set_xlim(-25, x+len(ch)+25)
-        if extend_bend == -1 or extend_bend > (len(ch) - unzip):
-            ax.set_ylim(-25, 1 + radius * (1 - np.cos(np.pi /
-                                                      2 * (len(ch) - unzip) / circ_4)) + 25)
-        else:
-            ax.set_ylim(-25, 14 + radius * (1 - np.cos(np.pi/2 * extend_bend / circ_4)) + (
-                len(ch)-unzip-extend_bend) * np.sin(np.pi/2 * extend_bend / circ_4) + 25)
-
-    width = ax.figure.bbox_inches.width * ax.get_position().width
-
-    xlims = np.diff(ax.get_xlim())
-    inch_per_scale = width / xlims
-    markersize = 7 * (inch_per_scale * 72 * 2)
-
-    # Actual plotting
-    ax.scatter(np.arange(0, len(ch)), len(ch) *
-               [0], color=colors[0], s=markersize**2)
-
-    if antiparallel:
-        ax.scatter(np.arange(x-unzip, x), unzip *
-                   [14], color=colors[1][:unzip], s=markersize**2)
-
-        ax.scatter(x-unzip - (radius * np.sin(np.pi/2 * np.arange(0, len(ch) - unzip) / circ_4)),
-                   14 + radius *
-                   (1 - np.cos(np.pi/2 * np.arange(0, len(ch) - unzip) / circ_4)),
-                   color=colors[1][unzip:], s=markersize**2)
-        ax.scatter(x-unzip - radius * np.sin(np.pi/2 * (len(ch) - unzip) / circ_4),
-                   14 + radius *
-                   (1 - np.cos(np.pi/2 * (len(ch) - unzip) / circ_4)),
-                   s=2000, color='black')
-
-        ax.axvline(x-unzip, color='black')
-        ax.axvline(x, color='black')
-
-    else:
-        ax.scatter(np.arange(x, x+unzip), unzip *
-                   [14], color=colors[1][:unzip], s=markersize**2)
-
-        if extend_bend == -1 or extend_bend > (len(ch) - unzip):
-            ax.scatter(x+unzip + (radius * np.sin(np.pi/2 * np.arange(0, len(ch) - unzip) / circ_4)),
-                       14 + radius *
-                       (1 - np.cos(np.pi/2 * np.arange(0, len(ch) - unzip) / circ_4)),
-                       color=colors[1][unzip:], s=markersize**2)
-
-            ax.scatter(x+unzip + radius * np.sin(np.pi/2 * (len(ch) - unzip) / circ_4),
-                       14 + radius *
-                       (1 - np.cos(np.pi/2 * (len(ch) - unzip) / circ_4)),
-                       s=2000, color='black')
-
-        else:
-            ax.scatter(x+unzip + (radius * np.sin(np.pi/2 * np.arange(0, extend_bend) / circ_4)),
-                       14 + radius *
-                       (1 - np.cos(np.pi/2 * np.arange(0, extend_bend) / circ_4)),
-                       color=colors[1][unzip:unzip+extend_bend], s=markersize**2)
-            ax.scatter(x+unzip + radius * np.sin(np.pi/2 * extend_bend / circ_4) + np.arange(0, len(ch)-unzip-extend_bend) * np.cos(np.pi/2 * extend_bend / circ_4),
-                       14 + radius * (1 - np.cos(np.pi/2 * extend_bend / circ_4)) + np.arange(
-                           0, len(ch)-unzip-extend_bend) * np.sin(np.pi/2 * extend_bend / circ_4),
-                       color=colors[1][unzip+extend_bend:], s=markersize**2)
-            ax.scatter(x+unzip + radius * np.sin(np.pi/2 * extend_bend / circ_4) + (len(ch)-unzip-extend_bend) * np.cos(np.pi/2 * extend_bend / circ_4),
-                       14 + radius * (1 - np.cos(np.pi/2 * extend_bend / circ_4)) + (
-                           len(ch)-unzip-extend_bend) * np.sin(np.pi/2 * extend_bend / circ_4),
-                       s=2000, color='black')
-            ax.scatter(x+unzip + radius * np.sin(np.pi/2 * extend_bend / circ_4),
-                       14 + radius *
-                       (1 - np.cos(np.pi/2 * extend_bend / circ_4)),
-                       color='black', s=25)
-
-        ax.scatter(x+unzip, 14, color='black', s=25)
-
-    ax.scatter(len(ch), 0, s=2000, color='black')
-
-    if x_zoom:
-        ax.set_xlim(x_zoom[0], x_zoom[1])
-    ax.set_aspect('equal')
-
-
-def calc_bending_energy(L, R, lp=890, return_in_kbT=True):
-    if return_in_kbT:
+    if return_in_kBT:
         return lp * L / (2 * R**2)
     else:
-        # Return in J
+        # Return in Joule
         return lp * L / (2 * R**2) * 4.11e-21
 
 
 @jit(nopython=True)
 def calc_arc_potential(charges1,
                        charges2,
-                       x,
-                       unzip,
+                       stagger,
+                       L_o,
                        radius,
-                       extend,
+                       L_a,
                        y=14,
                        k=0.11,
-                       antiparallel=False,
-                       skip_outside=True):
+                       antiparallel=False):
     '''
-    Two contributions: arc, slope
+    This function calculates the electrostatic energy between the bent part of 
+    charges_2 and all of charges_1.
+    It consists of two parts. First the actually bent part of the rod (of length
+    L_a, called `potential_arc`) and the part after the bent part (of length
+    total_length - L_o - L_a, called `potential_arc`).
 
-    charges2 is always the bend one!
-    charges1 is the reversed one for antiparallel (x = 0 is total overlap, x = len(charges1) is no overlap)
+    `L_o` and `L_a` correspond to the straight overlap between the two rods and
+    the arc length, respectively (see the paper for more information).    
+
+    `charges2` represents the bent rod and `charges_1` the straight one.
+    In the antiparallel case, `charges1` is the reversed.
     '''
 
     window = int(2/k)
-    circ_4 = np.pi * radius / 2
-    unzip = int(unzip)
-    extend = int(extend)
+    quarter_circ = 2 * np.pi * radius / 4
+    L_o = int(L_o)
+    L_a = int(L_a)
 
     potential_arc = 0.
     potential_slope = 0.
@@ -219,14 +107,14 @@ def calc_arc_potential(charges1,
     if antiparallel:
         charges1 = charges1[::-1]
 
-    if x + unzip < len(charges1)+window:
+    if stagger + L_o < len(charges1)+window:
         # i is the index for the bend part
-        for i in range(0, min(len(charges2) - unzip, extend)):
-            curr_charges2 = charges2[i+unzip]
+        for i in range(0, min(len(charges2) - L_o, L_a)):
+            curr_charges2 = charges2[i+L_o]
             if curr_charges2:
-                curr_x = x + unzip + (radius * np.sin(np.pi/2 * i / circ_4))
-                curr_y = y + radius * (1 - np.cos(np.pi/2 * i / circ_4))
-                if (curr_x > len(charges1) + window or curr_y > y + window) and skip_outside:
+                curr_x = stagger + L_o + (radius * np.sin(np.pi/2 * i / quarter_circ))
+                curr_y = y + radius * (1 - np.cos(np.pi/2 * i / quarter_circ))
+                if (curr_x > len(charges1) + window or curr_y > y + window):
                     break
                 # j is the index of the straight one, curr_j is the middle one
                 curr_j = int(curr_x)
@@ -235,23 +123,21 @@ def calc_arc_potential(charges1,
                         r = np.sqrt((j-curr_j)**2 + (curr_y)**2)
                         potential_arc += curr_charges2 * \
                             charges1[j] * np.exp(-r * k)/r
-
-    
     
     # i is the index for the bend part
-    sin0 = np.sin(np.pi/2 * extend / circ_4)
-    cos0 = np.cos(np.pi/2 * extend / circ_4)
-    x0 = x + unzip + radius * sin0
+    sin0 = np.sin(np.pi/2 * L_a / quarter_circ)
+    cos0 = np.cos(np.pi/2 * L_a / quarter_circ)
+    x0 = stagger + L_o + radius * sin0
     y0 = y + radius * (1 - cos0)
 
     if x0 < len(charges1)+window:
 
-        for i in range(0, len(charges2) - unzip - extend):
-            curr_charges2 = charges2[i+extend+unzip]
+        for i in range(0, len(charges2) - L_o - L_a):
+            curr_charges2 = charges2[i+L_a+L_o]
             if curr_charges2:
                 curr_x = x0 + i * cos0
                 curr_y = y0 + i * sin0
-                if (curr_x > len(charges1) + window or curr_y > y + window) and skip_outside:
+                if (curr_x > len(charges1) + window or curr_y > y + window):
                     break
 
                 curr_j = int(curr_x)
@@ -265,76 +151,54 @@ def calc_arc_potential(charges1,
     potential_arc *= 4.75
     potential_slope *= 4.75
 
-#     return potential_arc, potential_slope
     return potential_arc + potential_slope
 
 
 def get_optimum_bending(charges1,
                         charges2,
-                        x,
-                        unzip,
+                        stagger,
+                        L_o,
                         antiparallel=False, 
                         k=0.11):
     '''
     Get optimum bending does NOT consider the straight part as it does not 
-    matter for the bending (i.e. it's the same for all R and extend!).
-    It will return the optimum energy for a given x and unbing which will 
+    matter for the bending (i.e. it's the same for all R and L_a!).
+    It will return the optimum energy for a given stagger and overlap L_o which will 
     include the bending energy as well as the energy of the bending and sloping
     part of the electrostatic energy but not the straight part of the 
     electrostatic energy (which has to be added one level higher!)
     '''
-    rs = np.arange(500, 2000, 100)
-    extends = np.arange(100, 250, 10)
-    energies = np.zeros((len(rs), len(extends)))
+    Rs = np.arange(500, 2000, 100)
+    L_as = np.arange(100, 250, 10)
+    energies = np.zeros((len(Rs), len(L_as)))
 
-    for i, r in enumerate(rs):
-        for j, extend in enumerate(extends):
-            energies[i, j] = calc_bending_energy(L=extend, R=r) + \
-                             calc_arc_potential(charges1, charges2, x=x, 
-                                                unzip=unzip, radius=r, k = k,
-                                                extend=extend, antiparallel=antiparallel)
+    for i, R in enumerate(Rs):
+        for j, L_a in enumerate(L_as):
+            energies[i, j] = calc_bending_energy(L=L_a, R=R) + \
+                             calc_arc_potential(charges1, charges2, stagger=stagger, 
+                                                L_o=L_o, radius=R, k = k,
+                                                L_a=L_a, antiparallel=antiparallel)
     
     minimum_values = np.unravel_index(np.argmin(energies), energies.shape)
-    return rs[minimum_values[0]], extends[minimum_values[1]], energies[minimum_values[0], minimum_values[1]]
+    return Rs[minimum_values[0]], L_as[minimum_values[1]], energies[minimum_values[0], minimum_values[1]]
 
 
-def get_attached_aas(len_ch, x, unzip, extend, radius, threshold=1.5):
+def calc_T1(pot, starting_overlap, a=0, b=None, D=1):
     '''
-    If pot0 is for r = y0 = 14aa, then at 1.5*y0 we have pot = 0.3 pot0 and at 2*y0 pot = 0.1 pot0
-
-    check with 
-    r0 = 14
-    pot0 = np.exp(-r0 * k)/r0
-    r = 2*r0
-    np.exp(-r * k)/r / pot_0
-    '''
-    # threshold is in nm
-    threshold *= 14
-    circ_4 = int(np.pi * radius / 2)
-
-    ys1 = 14 + radius * (1 - np.cos(np.pi/2 * np.arange(0, extend) / circ_4))
-    ys2 = 14 + radius * (1 - np.cos(np.pi/2 * extend / circ_4)) + \
-        np.arange(0, len_ch-unzip-extend) * np.sin(np.pi/2 * extend / circ_4)
-
-    ys = np.concatenate([ys1, ys2])
-
-    # The second part is the first position where the ys are larger than the thresold
-    return unzip + np.where(ys > threshold)[0][0]
-
-
-def calc_T1(x0, pot, a=0, b=None, D=1):
-    '''
-    For large x the function will give nan values.
-    This is because the potentials are only of length 200, whilst they should be 1089//5 = 217 long. So it is cut off too early but that shouldn't matter too much as these big values are unimportant anyways
+    Calculate the mean contact time based on the mean first passage time in 
+    the Fokker-Planck framework given the potential `pot` (in units of kB T)
+    $$
+    T(x) = \frac{1}{D} \int_x^b dz \, \exp \left(\frac{V(z)}{k_B T} \right) \left[\int_a^z dy \, \exp \left(- \frac{V(y)}{k_B T} \right) \right]
+    $$
     '''
 
-    if b == None:
+    if not b None:
         b = len(pot)
 
     T1 = 0
-    for z in range(x0, b):
+    for z in range(starting_overlap, b):
         T1 += np.exp(pot)[z] * (z-a) * np.mean(np.exp(-pot[a:z]/D))
 
-    T1 *= (b-x0) * 1/D
+    T1 *= (b-starting_overlap) * 1/D
 
     return T1
