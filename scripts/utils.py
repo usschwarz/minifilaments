@@ -192,7 +192,7 @@ def calc_T1(pot, starting_overlap, a=0, b=None, D=1):
     $$
     '''
 
-    if not b None:
+    if not b:
         b = len(pot)
 
     T1 = 0

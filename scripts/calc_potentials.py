@@ -46,5 +46,5 @@ if __name__ == "__main__":
         for stagger in range(0, 1000, 1):
             potentials[stagger, L_o] += get_optimum_bending(charges1, charges2, stagger, L_o*5, antiparallel=antiparallel)[2]
 
-    np.save("results/potentials/potentials_" + anti_str + "s_unfold_{}_{}.npy".format(iso1, iso2), 
+    np.save("results/potentials/potentials_" + anti_str + "{}_{}.npy".format(iso1, iso2), 
         potentials)

@@ -32,7 +32,7 @@ if __name__ == "__main__":
         potential = potentials[s]
         # correction of `max(0, s//5  - (len(charges1)-1000)//5))` because we 
         # only calculate until 1000aas but the charges are actually longer 
-        current_T1 = calc_T1(x0 = 195, 
+        current_T1 = calc_T1(starting_overlap = 195, 
                             pot = potential[::-1], 
                             a = max(0, s//5  - (len(charges1)-1000)//5), 
                             b = len(potential)) 
@@ -40,4 +40,4 @@ if __name__ == "__main__":
     
     T1s = np.array(T1s)
 
-    np.save('results/T1/T1' + anti_str + '_s_unfold_{}_{}.npy'.format(iso1, iso2), T1s)
+    np.save('results/T1/T1' + anti_str + '_{}_{}.npy'.format(iso1, iso2), T1s)

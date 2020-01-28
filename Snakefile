@@ -8,7 +8,7 @@ from itertools import product
 
 ISOS = ['A', 'B', 'C', 'M18A']
 
-final_files = ['results/T1/T1{}x_unfold_{}_{}.png'.format(anti_str, a, b) for anti_str in ['_anti_', '_'] for a, b in product(ISOS, repeat=2)] 
+final_files = ['results/T1/T1{}{}_{}.npy'.format(anti_str, a, b) for anti_str in ['_anti_', '_'] for a, b in product(ISOS, repeat=2)] 
 
 rule all:
     input:
@@ -21,11 +21,11 @@ rule create_all_charges:
 rule calc_T1:
     input:
         script = "scripts/calc_T1.py",
-        potentials = "results/potentials/potentials{anti}x_unfold_{iso1}_{iso2}.npy",
+        potentials = "results/potentials/potentials{anti}{iso1}_{iso2}.npy",
         charges1 = "data/charges/{iso1}_charges.npy"
 
     output:
-        "results/T1/T1{anti}x_unfold_{iso1}_{iso2}.npy",
+        "results/T1/T1{anti}{iso1}_{iso2}.npy",
     run:
         if wildcards.anti == '_anti_':
             shell("python {input.script} --potentials {input.potentials} --charges1 {input.charges1} --antiparallel")
@@ -33,13 +33,13 @@ rule calc_T1:
             shell("python {input.script} --potentials {input.potentials} --charges1 {input.charges1}")
             
 
-rule calc_potentials_x_unfold:
+rule calc_potentials:
     input:
-        script = "scripts/calc_potentials_x_unfold.py",
+        script = "scripts/calc_potentials.py",
         charges1 = "data/charges/{iso1}_charges.npy",
         charges2 = "data/charges/{iso2}_charges.npy"
     output:
-        "results/potentials/potentials{anti}_x_unfold_{iso1}_{iso2}.npy"
+        "results/potentials/potentials{anti}{iso1}_{iso2}.npy"
     run:
         if wildcards.anti == '_anti_':
             shell("python {input.script} --charges1 {input.charges1} --charges2 {input.charges2} --antiparallel")
