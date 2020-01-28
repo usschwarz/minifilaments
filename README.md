@@ -1,7 +1,7 @@
 # Staggering and splaying in nonmuscle myosin II minifilaments
-Code for the Publication **Staggering and splaying in nonmuscle myosin II minifilaments** by Tom Kaufmann and Ulrich S. Schwarz (*Institute for Theoretical Physics and BioQuant, Heidelberg University, Heidelberg, Germany*).
+Code for the manuscript **Staggering and splaying in nonmuscle myosin II minifilaments** by Tom Kaufmann and Ulrich S. Schwarz (*Institute for Theoretical Physics and BioQuant, Heidelberg University, Heidelberg, Germany*).
 
-Correspondence should be addressed to Prof. Ulrich S. Schwarz at schwarz@thphys.uni-heidelberg.de. ([Website](https://www.thphys.uni-heidelberg.de/~biophys/))
+Correspondence should be addressed to Ulrich Schwarz at schwarz@thphys.uni-heidelberg.de. ([Website](https://www.thphys.uni-heidelberg.de/~biophys/))
 
 
 ## Folder structure
